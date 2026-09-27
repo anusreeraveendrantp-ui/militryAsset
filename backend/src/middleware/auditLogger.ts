@@ -8,7 +8,7 @@ const SENSITIVE_FIELDS = ['password', 'passwordHash', 'token', 'secret'];
 
 function sanitizePayload(payload: Record<string, unknown>): Record<string, unknown> {
   if (!payload || typeof payload !== 'object') return payload;
-  const sanitized = { ...payload };
+  const sanitized: Record<string, unknown> = { ...payload };
   for (const field of SENSITIVE_FIELDS) {
     if (field in sanitized) {
       sanitized[field] = '[REDACTED]';
@@ -51,7 +51,7 @@ export const auditLogger = (req: AuthRequest, res: Response, next: NextFunction)
               action: getActionName(req.method, req.path),
               endpoint: req.path,
               method: req.method,
-              payload: sanitized as unknown as Prisma.InputJsonValue,
+              payload: sanitized as Prisma.JsonObject,
               statusCode: res.statusCode,
             },
           });

@@ -36,9 +36,8 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       username: user.username,
     };
 
-    const token = jwt.sign(payload, process.env.JWT_SECRET as string, {
-      expiresIn: (process.env.JWT_EXPIRES_IN || '24h') as string,
-    } as jwt.SignOptions);
+    const secret = process.env.JWT_SECRET as string;
+    const token = jwt.sign(payload, secret, { expiresIn: '24h' });
 
     logger.info('User logged in', { userId: user.id, role: user.role });
 
