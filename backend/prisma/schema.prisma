@@ -1,0 +1,180 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  BASE_COMMANDER
+  LOGISTICS_OFFICER
+}
+
+enum EquipmentCategory {
+  VEHICLE
+  WEAPON
+  AMMUNITION
+  OTHER
+}
+
+enum TransferStatus {
+  PENDING
+  COMPLETED
+  CANCELLED
+}
+
+enum AssignmentStatus {
+  ASSIGNED
+  RETURNED
+  EXPENDED
+}
+
+model Base {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  location  String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  users         User[]
+  purchases     Purchase[]
+  transfersFrom Transfer[]     @relation("TransferFrom")
+  transfersTo   Transfer[]     @relation("TransferTo")
+  assignments   Assignment[]
+  expenditures  Expenditure[]
+  assetBalances AssetBalance[]
+
+  @@map("bases")
+}
+
+model User {
+  id           String   @id @default(uuid())
+  username     String   @unique
+  passwordHash String   @map("password_hash")
+  role         Role
+  baseId       String?  @map("base_id")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  base         Base?         @relation(fields: [baseId], references: [id])
+  purchases    Purchase[]
+  transfers    Transfer[]
+  assignments  Assignment[]
+  expenditures Expenditure[]
+  auditLogs    AuditLog[]
+
+  @@map("users")
+}
+
+model EquipmentType {
+  id       String            @id @default(uuid())
+  name     String            @unique
+  category EquipmentCategory
+
+  purchases     Purchase[]
+  transfers     Transfer[]
+  assignments   Assignment[]
+  expenditures  Expenditure[]
+  assetBalances AssetBalance[]
+
+  @@map("equipment_types")
+}
+
+model AssetBalance {
+  id              String   @id @default(uuid())
+  baseId          String   @map("base_id")
+  equipmentTypeId String   @map("equipment_type_id")
+  openingBalance  Int      @default(0) @map("opening_balance")
+  closingBalance  Int      @default(0) @map("closing_balance")
+  periodStart     DateTime @map("period_start")
+  periodEnd       DateTime @map("period_end")
+
+  base          Base          @relation(fields: [baseId], references: [id])
+  equipmentType EquipmentType @relation(fields: [equipmentTypeId], references: [id])
+
+  @@map("asset_balances")
+}
+
+model Purchase {
+  id              String   @id @default(uuid())
+  baseId          String   @map("base_id")
+  equipmentTypeId String   @map("equipment_type_id")
+  quantity        Int
+  purchaseDate    DateTime @map("purchase_date")
+  createdBy       String   @map("created_by")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  base          Base          @relation(fields: [baseId], references: [id])
+  equipmentType EquipmentType @relation(fields: [equipmentTypeId], references: [id])
+  creator       User          @relation(fields: [createdBy], references: [id])
+
+  @@map("purchases")
+}
+
+model Transfer {
+  id              String         @id @default(uuid())
+  equipmentTypeId String         @map("equipment_type_id")
+  quantity        Int
+  fromBaseId      String         @map("from_base_id")
+  toBaseId        String         @map("to_base_id")
+  transferDate    DateTime       @map("transfer_date")
+  status          TransferStatus @default(PENDING)
+  createdBy       String         @map("created_by")
+  createdAt       DateTime       @default(now()) @map("created_at")
+
+  equipmentType EquipmentType @relation(fields: [equipmentTypeId], references: [id])
+  fromBase      Base          @relation("TransferFrom", fields: [fromBaseId], references: [id])
+  toBase        Base          @relation("TransferTo", fields: [toBaseId], references: [id])
+  creator       User          @relation(fields: [createdBy], references: [id])
+
+  @@map("transfers")
+}
+
+model Assignment {
+  id              String           @id @default(uuid())
+  baseId          String           @map("base_id")
+  equipmentTypeId String           @map("equipment_type_id")
+  assignedTo      String           @map("assigned_to")
+  quantity        Int
+  assignedDate    DateTime         @map("assigned_date")
+  status          AssignmentStatus @default(ASSIGNED)
+  createdBy       String           @map("created_by")
+
+  base          Base          @relation(fields: [baseId], references: [id])
+  equipmentType EquipmentType @relation(fields: [equipmentTypeId], references: [id])
+  creator       User          @relation(fields: [createdBy], references: [id])
+
+  @@map("assignments")
+}
+
+model Expenditure {
+  id              String   @id @default(uuid())
+  baseId          String   @map("base_id")
+  equipmentTypeId String   @map("equipment_type_id")
+  quantity        Int
+  expenditureDate DateTime @map("expenditure_date")
+  reason          String
+  createdBy       String   @map("created_by")
+
+  base          Base          @relation(fields: [baseId], references: [id])
+  equipmentType EquipmentType @relation(fields: [equipmentTypeId], references: [id])
+  creator       User          @relation(fields: [createdBy], references: [id])
+
+  @@map("expenditures")
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  userId     String   @map("user_id")
+  action     String
+  endpoint   String
+  method     String
+  payload    Json?
+  statusCode Int      @map("status_code")
+  timestamp  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("audit_logs")
+}

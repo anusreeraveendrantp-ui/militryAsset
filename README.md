@@ -1,70 +1,143 @@
-# Getting Started with Create React App
+# Military Asset Management System (MAMS)
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A full-stack role-based web application for tracking, assigning, transferring, and expending military assets across multiple bases.
 
-## Available Scripts
+---
 
-In the project directory, you can run:
+## Tech Stack
 
-### `npm start`
+| Layer | Technology |
+|-------|-----------|
+| Frontend | React 18, React Router, TanStack Query, Recharts, Axios |
+| Backend | Node.js, Express, TypeScript, Prisma ORM |
+| Database | PostgreSQL |
+| Auth | JWT (jsonwebtoken + bcryptjs) |
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+---
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## Project Structure
 
-### `npm test`
+```
+militry-asset/
+├── src/                    # React frontend (CRA)
+│   ├── api/                # Axios instance + endpoint helpers
+│   ├── components/         # Layout + UI components
+│   ├── context/            # AuthContext (JWT state)
+│   └── pages/              # Dashboard, Purchases, Transfers, Assignments, Expenditures, AuditLogs, Users
+├── backend/                # Express + TypeScript API
+│   ├── prisma/             # schema.prisma
+│   └── src/
+│       ├── controllers/    # Route handlers
+│       ├── middleware/     # auth.ts, rbac.ts, auditLogger.ts
+│       ├── routes/         # Express routers
+│       ├── services/       # (extend as needed)
+│       └── lib/            # Prisma client, Winston logger
+└── public/                 # CRA public assets
+```
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+---
 
-### `npm run build`
+## Prerequisites
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+- Node.js ≥ 18
+- PostgreSQL ≥ 14 (running locally or via Docker)
+- npm
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+---
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## Quick Start
 
-### `npm run eject`
+### 1. Database
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+Create a PostgreSQL database:
+```bash
+psql -U postgres -c "CREATE DATABASE mams_db;"
+```
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+### 2. Backend
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+```bash
+cd backend
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+# Copy and edit environment variables
+cp .env.example .env
+# Edit DATABASE_URL in .env to match your Postgres credentials
 
-## Learn More
+# Install dependencies (already done if node_modules exists)
+npm install
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+# Generate Prisma client
+npx prisma generate
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+# Run migrations
+npx prisma migrate dev --name init
 
-### Code Splitting
+# Seed demo data
+npm run prisma:seed
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+# Start the API server (http://localhost:5000)
+npm run dev
+```
 
-### Analyzing the Bundle Size
+### 3. Frontend
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+From the project root:
+```bash
+# Install dependencies (already done)
+npm install
 
-### Making a Progressive Web App
+# Start React app (http://localhost:3000)
+npm start
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+---
 
-### Advanced Configuration
+## Demo Login Credentials
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+| Role | Username | Password |
+|------|----------|----------|
+| Admin | `admin@mams.mil` | `Admin@12345` |
+| Base Commander (Alpha) | `commander.alpha@mams.mil` | `Commander@123` |
+| Base Commander (Bravo) | `commander.bravo@mams.mil` | `Commander@123` |
+| Logistics Officer | `logistics.officer@mams.mil` | `Logistics@123` |
 
-### Deployment
+---
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+## API Endpoints
 
-### `npm run build` fails to minify
+| Method | Endpoint | Roles | Description |
+|--------|----------|-------|-------------|
+| POST | `/api/auth/login` | All | Authenticate, return JWT |
+| GET | `/api/auth/me` | All | Get current user |
+| GET | `/api/dashboard/metrics` | All (scoped) | Opening/Closing balance, Net Movement |
+| GET | `/api/dashboard/net-movement/:baseId` | All (scoped) | Equipment breakdown per base |
+| GET/POST | `/api/purchases` | All / Admin+Logistics | List or create purchases |
+| GET/POST | `/api/transfers` | All / Admin+Logistics | List or initiate transfers |
+| PATCH | `/api/transfers/:id/complete` | Admin+Logistics | Mark transfer completed |
+| PATCH | `/api/transfers/:id/cancel` | Admin+Logistics | Cancel transfer |
+| GET/POST | `/api/assignments` | Admin+Commander | List or create assignments |
+| PATCH | `/api/assignments/:id/status` | Admin+Commander | Update assignment status |
+| GET/POST | `/api/expenditures` | Admin+Commander | List or record expenditures |
+| GET | `/api/audit-logs` | Admin only | System-wide audit trail |
+| GET/POST/PUT/DELETE | `/api/users` | Admin only | User management |
+| GET/POST/PUT/DELETE | `/api/bases` | Admin / All read | Base management |
+| GET/POST/PUT | `/api/equipment-types` | Admin / All read | Equipment type management |
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+---
+
+## RBAC Summary
+
+| Role | Purchases | Transfers | Assignments | Expenditures | Audit Logs | Users |
+|------|-----------|-----------|-------------|--------------|------------|-------|
+| Admin | ✅ Full | ✅ Full | ✅ Full | ✅ Full | ✅ Read | ✅ Full |
+| Base Commander | 👁 View own | 👁 View own | ✅ Own base | ✅ Own base | ❌ | ❌ |
+| Logistics Officer | ✅ Create/View | ✅ Create/View | ❌ | ❌ | ❌ | ❌ |
+
+---
+
+## Net Movement Formula
+
+```
+Net Movement = Purchases + Transfers In − Transfers Out
+Closing Balance = Opening Balance + Net Movement − Expenditures
+```
