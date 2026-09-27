@@ -2,6 +2,7 @@ import { Response, NextFunction } from 'express';
 import { AuthRequest } from '../types';
 import prisma from '../lib/prisma';
 import logger from '../lib/logger';
+import { Prisma } from '@prisma/client';
 
 const SENSITIVE_FIELDS = ['password', 'passwordHash', 'token', 'secret'];
 
@@ -50,7 +51,7 @@ export const auditLogger = (req: AuthRequest, res: Response, next: NextFunction)
               action: getActionName(req.method, req.path),
               endpoint: req.path,
               method: req.method,
-              payload: sanitized,
+              payload: sanitized as unknown as Prisma.InputJsonValue,
               statusCode: res.statusCode,
             },
           });
