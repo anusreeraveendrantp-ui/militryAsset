@@ -23,7 +23,17 @@ const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://localhost:5173'],
+  origin: (origin, callback) => {
+    // Allow no-origin requests (Postman, curl, server-to-server)
+    if (!origin) return callback(null, true);
+    // Allow all Vercel preview and production URLs
+    if (origin.endsWith('.vercel.app')) return callback(null, true);
+    // Allow localhost dev
+    if (origin.startsWith('http://localhost')) return callback(null, true);
+    // Allow any explicitly set FRONTEND_URL env var
+    if (process.env.FRONTEND_URL && origin === process.env.FRONTEND_URL) return callback(null, true);
+    callback(new Error(`CORS blocked for origin: ${origin}`));
+  },
   credentials: true,
 }));
 app.use(express.json());
