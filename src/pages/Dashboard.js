@@ -9,7 +9,7 @@ import Spinner from '../components/UI/Spinner';
 import Button from '../components/UI/Button';
 import Modal from '../components/UI/Modal';
 
-const PIE_COLORS = ['#1e3a5f', '#2563eb', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
+// PIE_COLORS used via index in Cell fill below
 
 function formatDate(d) {
   return d.toISOString().split('T')[0];
