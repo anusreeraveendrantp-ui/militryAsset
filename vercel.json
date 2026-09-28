@@ -1,4 +1,15 @@
 {
+  "services": {
+    "frontend": {
+      "root": ".",
+      "framework": "create-react-app",
+      "buildCommand": "npm run build",
+      "outputDirectory": "build",
+      "env": {
+        "REACT_APP_API_BASE_URL": "https://militryasset.onrender.com/api"
+      }
+    }
+  },
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
   ]
